@@ -13,10 +13,22 @@ import { User, UserDocument } from './schema/user.schema';
 import { ChangePasswordDto } from './dto/change-password.dto';
 import * as bcrypt from 'bcrypt';
 
+/**
+ * บริการจัดการผู้ใช้งานในระบบ
+ * รับผิดชอบการสร้าง ค้นหา แก้ไข และลบข้อมูลผู้ใช้งาน
+ * จัดการการลงทะเบียน และการเปลี่ยนรหัสผ่าน
+ */
 @Injectable()
 export class UserService {
   constructor(@InjectModel(User.name) private userModel: Model<UserDocument>) {}
 
+  /**
+   * ลงทะเบียนผู้ใช้งานใหม่ในระบบ
+   * @param registerDTO ข้อมูลที่ใช้ในการลงทะเบียน
+   * @returns ข้อมูลผู้ใช้งานที่สร้างใหม่
+   * @throws ConflictException หากมีอีเมลนี้ในระบบแล้ว
+   * @throws BadRequestException หากข้อมูลไม่ครบถ้วนหรือไม่ถูกต้อง
+   */
   async register(registerDTO: RegisterDTO): Promise<User> {
     // ตรวจสอบว่ามีอีเมลนี้ในระบบแล้วหรือไม่
     const existingUser = await this.userModel.findOne({
@@ -33,6 +45,7 @@ export class UserService {
 
     // สำหรับ super_admin ไม่จำเป็นต้องมี branchId
     if (registerDTO.role === 'super_admin') {
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
       const { branchId, ...superAdminData } = registerDTO;
       const newUser = new this.userModel(superAdminData);
       return await newUser.save();
@@ -42,6 +55,12 @@ export class UserService {
     return await newUser.save();
   }
 
+  /**
+   * ค้นหาผู้ใช้งานด้วยอีเมล
+   * @param email อีเมลของผู้ใช้งาน
+   * @returns ข้อมูลผู้ใช้งานที่ค้นพบ
+   * @throws NotFoundException หากไม่พบผู้ใช้งานที่มีอีเมลนี้
+   */
   async findByEmail(email: string): Promise<UserDocument> {
     const user = await this.userModel.findOne({ email }).exec();
     if (!user) {
@@ -50,6 +69,12 @@ export class UserService {
     return user;
   }
 
+  /**
+   * สร้างผู้ใช้งานใหม่
+   * @param createDto ข้อมูลผู้ใช้งานที่ต้องการสร้าง
+   * @returns ข้อมูลผู้ใช้งานที่สร้างใหม่
+   * @throws ConflictException หากมีอีเมลนี้ในระบบแล้ว
+   */
   async create(createDto: CreateUserDto): Promise<User> {
     // ตรวจสอบว่ามีอีเมลนี้ในระบบแล้วหรือไม่
     const existingUser = await this.userModel.findOne({
@@ -63,6 +88,11 @@ export class UserService {
     return created.save();
   }
 
+  /**
+   * ค้นหาผู้ใช้งานทั้งหมดที่ตรงตามเงื่อนไข
+   * @param filters เงื่อนไขในการค้นหา (role, branchId)
+   * @returns รายการผู้ใช้งานและจำนวนทั้งหมด
+   */
   async findAll(filters: any = {}) {
     const users = await this.userModel.find(filters).exec();
     const total = await this.userModel.countDocuments(filters).exec();
@@ -73,6 +103,12 @@ export class UserService {
     };
   }
 
+  /**
+   * ค้นหาผู้ใช้งานด้วยรหัส ID
+   * @param id รหัสผู้ใช้งาน
+   * @returns ข้อมูลผู้ใช้งานที่ค้นพบ
+   * @throws NotFoundException หากไม่พบผู้ใช้งาน
+   */
   async findOne(id: string): Promise<User> {
     const user = await this.userModel.findById(id).exec();
     if (!user) {
@@ -81,6 +117,14 @@ export class UserService {
     return user;
   }
 
+  /**
+   * อัปเดตข้อมูลผู้ใช้งาน
+   * @param id รหัสผู้ใช้งานที่ต้องการอัปเดต
+   * @param updateUserDto ข้อมูลที่ต้องการอัปเดต
+   * @returns ข้อมูลผู้ใช้งานที่อัปเดตแล้ว
+   * @throws NotFoundException หากไม่พบผู้ใช้งาน
+   * @throws ConflictException หากอีเมลที่ต้องการอัปเดตมีผู้ใช้งานอื่นใช้แล้ว
+   */
   async update(id: string, updateUserDto: UpdateUserDto): Promise<User> {
     // ถ้ามีการอัพเดทอีเมล ต้องตรวจสอบว่าซ้ำหรือไม่
     if (updateUserDto.email) {
@@ -110,6 +154,14 @@ export class UserService {
     return updatedUser;
   }
 
+  /**
+   * เปลี่ยนรหัสผ่านของผู้ใช้งาน
+   * @param id รหัสผู้ใช้งาน
+   * @param dto ข้อมูลรหัสผ่านปัจจุบันและรหัสผ่านใหม่
+   * @returns true หากเปลี่ยนรหัสผ่านสำเร็จ
+   * @throws NotFoundException หากไม่พบผู้ใช้งาน
+   * @throws BadRequestException หากรหัสผ่านปัจจุบันไม่ถูกต้อง
+   */
   async changePassword(id: string, dto: ChangePasswordDto): Promise<boolean> {
     const user = await this.userModel.findById(id).exec();
     if (!user) {
@@ -132,6 +184,12 @@ export class UserService {
     return true;
   }
 
+  /**
+   * ลบผู้ใช้งาน
+   * @param id รหัสผู้ใช้งานที่ต้องการลบ
+   * @returns ข้อมูลผู้ใช้งานที่ถูกลบ
+   * @throws NotFoundException หากไม่พบผู้ใช้งาน
+   */
   async remove(id: string): Promise<User> {
     const deletedUser = await this.userModel.findByIdAndDelete(id).exec();
 
@@ -142,6 +200,11 @@ export class UserService {
     return deletedUser;
   }
 
+  /**
+   * ค้นหาผู้ใช้งานตามรหัสสาขา
+   * @param branchId รหัสสาขา
+   * @returns รายการผู้ใช้งานทั้งหมดในสาขานั้น
+   */
   async findByBranch(branchId: string): Promise<User[]> {
     return this.userModel.find({ branchId }).exec();
   }

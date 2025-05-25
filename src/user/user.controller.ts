@@ -20,17 +20,35 @@ import { AuthGuard } from '@nestjs/passport';
 import { ChangePasswordDto } from './dto/change-password.dto';
 import { UserResponseDto } from './dto/user-response.dto';
 
+/**
+ * คอนโทรลเลอร์จัดการ API ผู้ใช้งาน
+ * ให้บริการ endpoint สำหรับการจัดการข้อมูลผู้ใช้งานในระบบ
+ * มีการจัดการความปลอดภัยโดยใช้ ClassSerializerInterceptor เพื่อซ่อนข้อมูลที่ละเอียดอ่อน
+ */
 @Controller('users')
 @UseInterceptors(ClassSerializerInterceptor)
 export class UserController {
   constructor(private readonly userService: UserService) {}
 
+  /**
+   * API ลงทะเบียนผู้ใช้งานใหม่
+   * POST /users/register
+   * @param registerDTO ข้อมูลสำหรับการลงทะเบียน
+   * @returns ข้อมูลผู้ใช้งานที่สร้างขึ้น โดยไม่รวมรหัสผ่าน
+   */
   @Post('register')
   async register(@Body() registerDTO: RegisterDTO) {
     const user = await this.userService.register(registerDTO);
     return new UserResponseDto(user);
   }
 
+  /**
+   * API สร้างผู้ใช้งานใหม่ (สำหรับผู้ดูแลระบบ)
+   * ต้องมีการยืนยันตัวตนด้วย JWT
+   * POST /users
+   * @param createUserDto ข้อมูลผู้ใช้งานที่ต้องการสร้าง
+   * @returns ข้อมูลผู้ใช้งานที่สร้างขึ้น โดยไม่รวมรหัสผ่าน
+   */
   @UseGuards(AuthGuard('jwt'))
   @Post()
   async create(@Body() createUserDto: CreateUserDto) {
@@ -38,6 +56,12 @@ export class UserController {
     return new UserResponseDto(user);
   }
 
+  /**
+   * API ดึงข้อมูลโปรไฟล์ของผู้ใช้งานที่เข้าสู่ระบบ
+   * ต้องมีการยืนยันตัวตนด้วย JWT
+   * GET /users/profile
+   * @returns ข้อมูลผู้ใช้งานที่เข้าสู่ระบบ โดยไม่รวมรหัสผ่าน
+   */
   @UseGuards(AuthGuard('jwt'))
   @Get('profile')
   async getProfile(@Request() req) {
@@ -45,6 +69,13 @@ export class UserController {
     return new UserResponseDto(user);
   }
 
+  /**
+   * API ดึงรายการผู้ใช้งานทั้งหมด
+   * สามารถกรองตามบทบาทและรหัสสาขาได้
+   * ต้องมีการยืนยันตัวตนด้วย JWT
+   * GET /users?role=xxx&branchId=yyy
+   * @returns รายการผู้ใช้งานและจำนวนทั้งหมด
+   */
   @UseGuards(AuthGuard('jwt'))
   @Get()
   async findAll(
@@ -63,6 +94,12 @@ export class UserController {
     };
   }
 
+  /**
+   * API ดึงข้อมูลผู้ใช้งานตามรหัส ID
+   * ต้องมีการยืนยันตัวตนด้วย JWT
+   * GET /users/:id
+   * @returns ข้อมูลผู้ใช้งานที่ค้นพบ โดยไม่รวมรหัสผ่าน
+   */
   @UseGuards(AuthGuard('jwt'))
   @Get(':id')
   async findOne(@Param('id') id: string) {
@@ -70,6 +107,12 @@ export class UserController {
     return new UserResponseDto(user);
   }
 
+  /**
+   * API อัปเดตข้อมูลผู้ใช้งาน
+   * ต้องมีการยืนยันตัวตนด้วย JWT
+   * PATCH /users/:id
+   * @returns ข้อมูลผู้ใช้งานที่อัปเดตแล้ว โดยไม่รวมรหัสผ่าน
+   */
   @UseGuards(AuthGuard('jwt'))
   @Patch(':id')
   async update(@Param('id') id: string, @Body() updateUserDto: UpdateUserDto) {
@@ -77,6 +120,12 @@ export class UserController {
     return new UserResponseDto(user);
   }
 
+  /**
+   * API เปลี่ยนรหัสผ่านของผู้ใช้งาน
+   * ต้องมีการยืนยันตัวตนด้วย JWT
+   * POST /users/change-password
+   * @returns ข้อความแจ้งผลสำเร็จ
+   */
   @UseGuards(AuthGuard('jwt'))
   @Post('change-password')
   async changePassword(
@@ -87,6 +136,12 @@ export class UserController {
     return { success: true, message: 'เปลี่ยนรหัสผ่านสำเร็จ' };
   }
 
+  /**
+   * API ลบผู้ใช้งาน
+   * ต้องมีการยืนยันตัวตนด้วย JWT
+   * DELETE /users/:id
+   * @returns ข้อมูลผู้ใช้งานที่ถูกลบ โดยไม่รวมรหัสผ่าน
+   */
   @UseGuards(AuthGuard('jwt'))
   @Delete(':id')
   async remove(@Param('id') id: string) {
@@ -94,6 +149,12 @@ export class UserController {
     return new UserResponseDto(user);
   }
 
+  /**
+   * API ดึงรายการผู้ใช้งานตามรหัสสาขา
+   * ต้องมีการยืนยันตัวตนด้วย JWT
+   * GET /users/branch/:branchId
+   * @returns รายการผู้ใช้งานในสาขา โดยไม่รวมรหัสผ่าน
+   */
   @UseGuards(AuthGuard('jwt'))
   @Get('branch/:branchId')
   async findByBranch(@Param('branchId') branchId: string) {
