@@ -7,6 +7,8 @@ import { MongooseModule } from '@nestjs/mongoose';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { BranchesModule } from './branches/branches.module';
 import { TablesModule } from './tables/tables.module';
+import { MenuCategoriesModule } from './menu-categories/menu-categories.module';
+import { MenuItemsModule } from './menu-items/menu-items.module';
 
 @Module({
   imports: [
@@ -24,6 +26,8 @@ import { TablesModule } from './tables/tables.module';
     UserModule,
     BranchesModule,
     TablesModule,
+    MenuCategoriesModule,
+    MenuItemsModule,
   ],
   controllers: [AppController],
   providers: [AppService],
