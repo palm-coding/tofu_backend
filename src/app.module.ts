@@ -9,6 +9,8 @@ import { BranchesModule } from './branches/branches.module';
 import { TablesModule } from './tables/tables.module';
 import { MenuCategoriesModule } from './menu-categories/menu-categories.module';
 import { MenuItemsModule } from './menu-items/menu-items.module';
+import { SessionsModule } from './sessions/sessions.module';
+import { OrdersModule } from './orders/orders.module';
 
 @Module({
   imports: [
@@ -28,6 +30,8 @@ import { MenuItemsModule } from './menu-items/menu-items.module';
     TablesModule,
     MenuCategoriesModule,
     MenuItemsModule,
+    SessionsModule,
+    OrdersModule,
   ],
   controllers: [AppController],
   providers: [AppService],
