@@ -11,6 +11,7 @@ import { MenuCategoriesModule } from './menu-categories/menu-categories.module';
 import { MenuItemsModule } from './menu-items/menu-items.module';
 import { SessionsModule } from './sessions/sessions.module';
 import { OrdersModule } from './orders/orders.module';
+import { PaymentsModule } from './payments/payments.module';
 
 @Module({
   imports: [
@@ -32,6 +33,7 @@ import { OrdersModule } from './orders/orders.module';
     MenuItemsModule,
     SessionsModule,
     OrdersModule,
+    PaymentsModule,
   ],
   controllers: [AppController],
   providers: [AppService],
