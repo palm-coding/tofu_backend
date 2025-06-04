@@ -42,6 +42,13 @@ export class Order {
   })
   tableId: MongooseSchema.Types.ObjectId;
 
+  // ส่วนที่ต้องเพิ่ม - เพิ่มฟิลด์ระบุผู้สั่ง
+  @Prop({ required: false })
+  clientId: string;
+
+  @Prop({ required: false })
+  orderBy: string;
+
   @Prop({
     required: true,
     enum: ['received', 'preparing', 'served', 'paid'],

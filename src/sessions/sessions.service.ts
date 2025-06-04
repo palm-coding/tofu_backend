@@ -26,10 +26,14 @@ export class SessionsService {
     const qrCode = createSessionDto.qrCode || this.generateQrCodeString();
 
     const createdSession = new this.sessionModel({
-      ...createSessionDto,
+      branchId: createSessionDto.branchId,
+      tableId: createSessionDto.tableId,
       qrCode,
       checkinAt: new Date(),
+      // เริ่มต้นด้วย members เป็น array ว่าง
+      members: [],
     });
+
     return createdSession.save();
   }
 
@@ -127,6 +131,106 @@ export class SessionsService {
    */
   async findActiveSessionByTable(tableId: string): Promise<Session | null> {
     return this.sessionModel.findOne({ tableId, checkoutAt: null }).exec();
+  }
+
+  /**
+   * ค้นหาเซสชันด้วย QR Code
+   * @param qrCode QR Code ของเซสชัน
+   * @param includeInactive รวมเซสชันที่เช็คเอาท์แล้วด้วยหรือไม่
+   * @returns ข้อมูลเซสชันที่ค้นพบ หรือ null ถ้าไม่พบ
+   */
+  async findByQrCode(
+    qrCode: string,
+    includeInactive = false,
+  ): Promise<Session | null> {
+    // สร้าง filter โดยกำหนด qrCode เสมอ
+    const filter: any = { qrCode };
+
+    // ถ้าไม่ต้องการรวมเซสชันที่เช็คเอาท์แล้ว ให้กรองออกไป
+    if (!includeInactive) {
+      filter.checkoutAt = null;
+    }
+
+    return this.sessionModel
+      .findOne(filter)
+      .populate('branchId')
+      .populate('tableId')
+      .populate({
+        path: 'orderIds',
+        populate: [
+          {
+            path: 'orderLines',
+            populate: {
+              path: 'menuItemId',
+              model: 'MenuItem',
+            },
+          },
+        ],
+      })
+      .exec();
+  }
+
+  /**
+   * เพิ่มสมาชิกใหม่เข้าเซสชัน (เมื่อสแกน QR Code)
+   * @param qrCode QR Code ของเซสชัน
+   * @param memberData ข้อมูลสมาชิก (clientId และ userLabel)
+   * @returns ข้อมูลเซสชันที่อัปเดตแล้ว
+   */
+  async joinSession(
+    qrCode: string,
+    memberData: { clientId: string; userLabel: string },
+  ): Promise<Session> {
+    const session = await this.findByQrCode(qrCode);
+
+    if (!session) {
+      throw new NotFoundException(`Session with QR Code ${qrCode} not found`);
+    }
+
+    if (session.checkoutAt) {
+      throw new Error('Cannot join a checked-out session');
+    }
+
+    // ตรวจสอบว่าสมาชิกคนนี้อยู่แล้วหรือไม่
+    const memberIndex = session.members.findIndex(
+      (m) => m.clientId === memberData.clientId,
+    );
+
+    // สร้างข้อมูลสำหรับการอัปเดต
+    let updateData: any;
+
+    if (memberIndex !== -1) {
+      // อัปเดตสมาชิกที่มีอยู่
+      updateData = {
+        $set: {
+          [`members.${memberIndex}.userLabel`]: memberData.userLabel,
+          [`members.${memberIndex}.isActive`]: true,
+        },
+      };
+    } else {
+      // เพิ่มสมาชิกใหม่
+      updateData = {
+        $push: {
+          members: {
+            clientId: memberData.clientId,
+            userLabel: memberData.userLabel,
+            joinedAt: new Date(),
+          },
+        },
+      };
+    }
+
+    // ใช้ findOneAndUpdate แทน save
+    const updatedSession = await this.sessionModel
+      .findOneAndUpdate({ _id: session._id }, updateData, { new: true })
+      .populate('branchId')
+      .populate('tableId')
+      .exec();
+
+    if (!updatedSession) {
+      throw new NotFoundException('Session not found after update');
+    }
+
+    return updatedSession;
   }
 
   /**

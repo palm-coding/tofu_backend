@@ -8,11 +8,13 @@ import {
   Delete,
   UseGuards,
   Query,
+  NotFoundException,
 } from '@nestjs/common';
 import { SessionsService } from './sessions.service';
 import { CreateSessionDto } from './dto/create-session.dto';
 import { UpdateSessionDto } from './dto/update-session.dto';
 import { AuthGuard } from '@nestjs/passport';
+import { JoinSessionDto } from './dto/join-session.dto';
 
 /**
  * คอนโทรลเลอร์จัดการ API เซสชันลูกค้า
@@ -60,6 +62,43 @@ export class SessionsController {
     @Query('activeOnly') activeOnly: boolean = false,
   ) {
     return this.sessionsService.findByBranch(branchId, activeOnly);
+  }
+
+  /**
+   * API ค้นหาเซสชันด้วย QR Code
+   * GET /sessions/qr/:qrCode
+   * @param qrCode QR Code ของเซสชัน
+   * @param includeInactive รวมเซสชันที่เช็คเอาท์แล้วด้วยหรือไม่
+   * @returns ข้อมูลเซสชันที่ค้นพบ หรือ null ถ้าไม่พบ
+   */
+  @Get('qr/:qrCode')
+  async findByQrCode(
+    @Param('qrCode') qrCode: string,
+    @Query('includeInactive') includeInactive: boolean = false,
+  ) {
+    const session = await this.sessionsService.findByQrCode(
+      qrCode,
+      includeInactive,
+    );
+    if (!session) {
+      throw new NotFoundException(`Session with QR Code ${qrCode} not found`);
+    }
+    return session;
+  }
+
+  /**
+   * API เข้าร่วมเซสชันด้วย QR Code
+   * POST /sessions/join/:qrCode
+   * @param qrCode QR Code ของเซสชัน
+   * @param joinSessionDto ข้อมูลผู้เข้าร่วม
+   * @returns ข้อมูลเซสชัน
+   */
+  @Post('join/:qrCode')
+  async joinSession(
+    @Param('qrCode') qrCode: string,
+    @Body() joinSessionDto: JoinSessionDto,
+  ) {
+    return this.sessionsService.joinSession(qrCode, joinSessionDto);
   }
 
   /**

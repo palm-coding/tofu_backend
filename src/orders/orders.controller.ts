@@ -58,6 +58,21 @@ export class OrdersController {
   }
 
   /**
+   * API ค้นหาออร์เดอร์ตามรหัสเซสชันและรหัสลูกค้า
+   * GET /orders/session/:sessionId/client/:clientId
+   * @param sessionId รหัสเซสชัน
+   * @param clientId รหัสลูกค้า
+   * @returns รายการออร์เดอร์ทั้งหมดในเซสชันและลูกค้านั้น
+   */
+  @Get('session/:sessionId/client/:clientId')
+  async findBySessionAndClient(
+    @Param('sessionId') sessionId: string,
+    @Param('clientId') clientId: string,
+  ) {
+    return this.ordersService.findBySessionAndClient(sessionId, clientId);
+  }
+
+  /**
    * API ค้นหาออร์เดอร์ตามรหัสสาขา
    * GET /orders/branch/:branchId
    * @param branchId รหัสสาขา
@@ -72,6 +87,47 @@ export class OrdersController {
     @Query('status') status: string,
   ) {
     return this.ordersService.findByBranch(branchId, status);
+  }
+
+  /**
+   * API ค้นหาออร์เดอร์ตามรหัสโต๊ะ
+   * GET /orders/table/:tableId
+   * @param tableId รหัสโต๊ะ
+   * @param status กรองตามสถานะ (ถ้ามี)
+   * @param clientId กรองตามรหัสลูกค้า (ถ้ามี)
+   * @param orderBy กรองตามชื่อผู้สั่ง (ถ้ามี)
+   * @param startDate กรองตามวันที่เริ่มต้น (ถ้ามี)
+   * @param endDate กรองตามวันที่สิ้นสุด (ถ้ามี)
+   * @returns รายการออร์เดอร์ทั้งหมดในโต๊ะนั้น
+   */
+  @Get('table/:tableId')
+  async findByTable(
+    @Param('tableId') tableId: string,
+    @Query('status') status: string,
+    @Query('clientId') clientId?: string,
+    @Query('orderBy') orderBy?: string,
+    @Query('startDate') startDate?: string,
+    @Query('endDate') endDate?: string,
+  ) {
+    const options: any = {};
+
+    if (clientId) {
+      options.clientId = clientId;
+    }
+
+    if (orderBy) {
+      options.orderBy = orderBy;
+    }
+
+    if (startDate) {
+      options.startDate = new Date(startDate);
+    }
+
+    if (endDate) {
+      options.endDate = new Date(endDate);
+    }
+
+    return this.ordersService.findByTable(tableId, status, options);
   }
 
   /**
@@ -129,5 +185,110 @@ export class OrdersController {
   @Delete(':id')
   async remove(@Param('id') id: string) {
     return this.ordersService.remove(id);
+  }
+
+  /**
+   * API ดึงข้อมูลยอดขายประจำสัปดาห์
+   * GET /orders/analytics/weekly-sales
+   * @param branchId รหัสสาขา (ถ้าต้องการข้อมูลเฉพาะสาขา)
+   * @param startDate วันที่เริ่มต้น (yyyy-mm-dd)
+   * @param endDate วันที่สิ้นสุด (yyyy-mm-dd)
+   * @returns ข้อมูลยอดขายแยกตามวันในสัปดาห์
+   * @requires การยืนยันตัวตน
+   */
+  @UseGuards(AuthGuard('jwt'))
+  @Get('analytics/weekly-sales')
+  async getWeeklySales(
+    @Query('branchId') branchId?: string,
+    @Query('startDate') startDate?: string,
+    @Query('endDate') endDate?: string,
+  ) {
+    const startDateObj = startDate ? new Date(startDate) : undefined;
+    const endDateObj = endDate ? new Date(endDate) : undefined;
+
+    return this.ordersService.getWeeklySales(
+      branchId,
+      startDateObj,
+      endDateObj,
+    );
+  }
+
+  /**
+   * API ดึงข้อมูลเมนูยอดนิยม
+   * GET /orders/analytics/popular-menu
+   * @param branchId รหัสสาขา (ถ้าต้องการข้อมูลเฉพาะสาขา)
+   * @param limit จำนวนรายการที่ต้องการดึง
+   * @param startDate วันที่เริ่มต้น (yyyy-mm-dd)
+   * @param endDate วันที่สิ้นสุด (yyyy-mm-dd)
+   * @returns รายการเมนูยอดนิยมและสัดส่วนการสั่ง
+   * @requires การยืนยันตัวตน
+   */
+  @UseGuards(AuthGuard('jwt'))
+  @Get('analytics/popular-menu')
+  async getPopularMenuItems(
+    @Query('branchId') branchId?: string,
+    @Query('limit') limit?: number,
+    @Query('startDate') startDate?: string,
+    @Query('endDate') endDate?: string,
+  ) {
+    const startDateObj = startDate ? new Date(startDate) : undefined;
+    const endDateObj = endDate ? new Date(endDate) : undefined;
+    const limitNum = limit ? parseInt(limit.toString(), 10) : 10;
+
+    return this.ordersService.getPopularMenuItems(
+      branchId,
+      limitNum,
+      startDateObj,
+      endDateObj,
+    );
+  }
+
+  /**
+   * API ดึงข้อมูลยอดขายรายชั่วโมง
+   * GET /orders/analytics/hourly-sales
+   * @param branchId รหัสสาขา (ถ้าต้องการข้อมูลเฉพาะสาขา)
+   * @param date วันที่ต้องการดูข้อมูล (yyyy-mm-dd)
+   * @returns ข้อมูลยอดขายแยกตามชั่วโมง
+   * @requires การยืนยันตัวตน
+   */
+  @UseGuards(AuthGuard('jwt'))
+  @Get('analytics/hourly-sales')
+  async getHourlySales(
+    @Query('branchId') branchId?: string,
+    @Query('date') date?: string,
+  ) {
+    const dateObj = date ? new Date(date) : undefined;
+
+    return this.ordersService.getHourlySales(branchId, dateObj);
+  }
+
+  /**
+   * API ดึงข้อมูลยอดขายและจำนวนลูกค้าตามช่วงเวลา
+   * GET /orders/analytics/sales-by-period
+   * @param branchId รหัสสาขา (ถ้าต้องการข้อมูลเฉพาะสาขา)
+   * @param startDate วันที่เริ่มต้น (yyyy-mm-dd)
+   * @param endDate วันที่สิ้นสุด (yyyy-mm-dd)
+   * @param groupBy วิธีจัดกลุ่ม ('hour', 'day', 'week', 'month')
+   * @returns ข้อมูลยอดขายและจำนวนลูกค้าตามช่วงเวลา
+   * @requires การยืนยันตัวตน
+   */
+  @UseGuards(AuthGuard('jwt'))
+  @Get('analytics/sales-by-period')
+  async getSalesByTimePeriod(
+    @Query('branchId') branchId?: string,
+    @Query('startDate') startDate?: string,
+    @Query('endDate') endDate?: string,
+    @Query('groupBy') groupBy?: 'hour' | 'day' | 'week' | 'month',
+  ) {
+    const startDateObj = startDate ? new Date(startDate) : undefined;
+    const endDateObj = endDate ? new Date(endDate) : undefined;
+    const groupByParam = groupBy || 'day';
+
+    return this.ordersService.getSalesByTimePeriod(
+      branchId,
+      startDateObj,
+      endDateObj,
+      groupByParam,
+    );
   }
 }

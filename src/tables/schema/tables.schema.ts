@@ -15,6 +15,9 @@ export class Table {
   @Prop({ required: true })
   name: string;
 
+  @Prop({ required: true })
+  capacity: number;
+
   @Prop({
     required: true,
     enum: ['available', 'occupied', 'reserved'],

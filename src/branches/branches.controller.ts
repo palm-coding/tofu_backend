@@ -46,17 +46,6 @@ export class BranchesController {
   }
 
   /**
-   * API ดึงข้อมูลสาขาตามรหัส ID
-   * GET /branches/:id
-   * @param id รหัสสาขา
-   * @returns ข้อมูลสาขาที่ค้นพบ
-   */
-  @Get(':id')
-  async findOne(@Param('id') id: string) {
-    return this.branchesService.findOne(id);
-  }
-
-  /**
    * API ดึงข้อมูลสาขาตามรหัสสาขา
    * GET /branches/code/:code
    * @param code รหัสสาขา
@@ -65,6 +54,17 @@ export class BranchesController {
   @Get('code/:code')
   async findByCode(@Param('code') code: string) {
     return this.branchesService.findByCode(code);
+  }
+
+  /**
+   * API ดึงข้อมูลสาขาตามรหัส ID
+   * GET /branches/:id
+   * @param id รหัสสาขา
+   * @returns ข้อมูลสาขาที่ค้นพบ
+   */
+  @Get(':id')
+  async findOne(@Param('id') id: string) {
+    return this.branchesService.findOne(id);
   }
 
   /**

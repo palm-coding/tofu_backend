@@ -10,6 +10,9 @@ export class CreateTableDto {
   @IsString()
   readonly name: string;
 
+  @IsNotEmpty({ message: 'กรุณาระบุจำนวนที่นั่ง' })
+  readonly capacity: number;
+
   @IsEnum(['available', 'occupied', 'reserved'], {
     message: 'สถานะโต๊ะต้องเป็น available, occupied หรือ reserved',
   })

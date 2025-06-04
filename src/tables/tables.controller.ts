@@ -46,17 +46,6 @@ export class TablesController {
   }
 
   /**
-   * API ดึงข้อมูลโต๊ะตามรหัส ID
-   * GET /tables/:id
-   * @param id รหัสโต๊ะ
-   * @returns ข้อมูลโต๊ะที่ค้นพบ
-   */
-  @Get(':id')
-  async findOne(@Param('id') id: string) {
-    return this.tablesService.findOne(id);
-  }
-
-  /**
    * API ดึงข้อมูลโต๊ะตามรหัสสาขา
    * GET /tables/branch/:branchId
    * @param branchId รหัสสาขา
@@ -65,6 +54,17 @@ export class TablesController {
   @Get('branch/:branchId')
   async findByBranch(@Param('branchId') branchId: string) {
     return this.tablesService.findByBranch(branchId);
+  }
+
+  /**
+   * API ดึงข้อมูลโต๊ะตามรหัส ID
+   * GET /tables/:id
+   * @param id รหัสโต๊ะ
+   * @returns ข้อมูลโต๊ะที่ค้นพบ
+   */
+  @Get(':id')
+  async findOne(@Param('id') id: string) {
+    return this.tablesService.findOne(id);
   }
 
   /**

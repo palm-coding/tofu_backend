@@ -47,6 +47,14 @@ export class CreateOrderDto {
   readonly tableId: string | MongooseSchema.Types.ObjectId;
 
   @IsOptional()
+  @IsString()
+  readonly clientId?: string;
+
+  @IsOptional()
+  @IsString()
+  readonly orderBy?: string;
+
+  @IsOptional()
   @IsEnum(['received', 'preparing', 'served', 'paid'], {
     message: 'สถานะไม่ถูกต้อง',
   })
