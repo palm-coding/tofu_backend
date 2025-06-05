@@ -12,6 +12,8 @@ import { MenuItemsModule } from './menu-items/menu-items.module';
 import { SessionsModule } from './sessions/sessions.module';
 import { OrdersModule } from './orders/orders.module';
 import { PaymentsModule } from './payments/payments.module';
+import { StocksModule } from './stocks/stocks.module';
+import { IngredientsModule } from './ingredients/ingredients.module';
 
 @Module({
   imports: [
@@ -34,6 +36,8 @@ import { PaymentsModule } from './payments/payments.module';
     SessionsModule,
     OrdersModule,
     PaymentsModule,
+    StocksModule,
+    IngredientsModule,
   ],
   controllers: [AppController],
   providers: [AppService],
