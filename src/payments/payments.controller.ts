@@ -8,11 +8,13 @@ import {
   Delete,
   UseGuards,
   Query,
+  Logger,
 } from '@nestjs/common';
 import { PaymentsService } from './payments.service';
 import { CreatePaymentDto } from './dto/create-payment.dto';
 import { UpdatePaymentDto } from './dto/update-payment.dto';
 import { AuthGuard } from '@nestjs/passport';
+import { PromptPayPaymentDto } from './dto/promptpay-payment.dto';
 
 /**
  * คอนโทรลเลอร์จัดการ API รายการชำระเงิน
@@ -20,6 +22,7 @@ import { AuthGuard } from '@nestjs/passport';
  */
 @Controller('payments')
 export class PaymentsController {
+  private readonly logger = new Logger(PaymentsController.name);
   constructor(private readonly paymentsService: PaymentsService) {}
 
   /**
@@ -136,5 +139,62 @@ export class PaymentsController {
   @Delete(':id')
   async remove(@Param('id') id: string) {
     return this.paymentsService.remove(id);
+  }
+
+  /**
+   * API สร้างรายการชำระเงินผ่าน PromptPay
+   * POST /payments/promptpay
+   * @param promptPayDto ข้อมูลการชำระเงิน
+   * @returns รายการชำระเงินที่สร้างขึ้นพร้อม QR Code
+   */
+  @UseGuards(AuthGuard('jwt'))
+  @Post('promptpay')
+  async createPromptPayPayment(@Body() promptPayDto: PromptPayPaymentDto) {
+    this.logger.log(
+      `Creating PromptPay payment for amount: ${promptPayDto.amount} THB`,
+    );
+    return this.paymentsService.createPromptPayPayment(promptPayDto);
+  }
+
+  /**
+   * API รับ webhook จาก Omise
+   * POST /payments/webhook
+   * @param body ข้อมูลจาก webhook
+   * @returns ผลลัพธ์การอัปเดตรายการชำระเงิน
+   */
+  @Post('webhook')
+  async handleWebhook(@Body() body: any) {
+    this.logger.log(
+      `Received webhook from Omise: ${JSON.stringify(body).substring(0, 100)}...`,
+    );
+
+    // ตรวจสอบประเภทของเหตุการณ์
+    if (body.data && body.data.object === 'charge' && body.data.id) {
+      const chargeId = body.data.id;
+      const status = body.data.status;
+
+      this.logger.log(
+        `Processing webhook for charge ${chargeId} with status ${status}`,
+      );
+      return this.paymentsService.updatePaymentStatusFromWebhook(
+        chargeId,
+        status,
+      );
+    }
+
+    return { received: true };
+  }
+
+  /**
+   * API ตรวจสอบสถานะการชำระเงิน PromptPay
+   * GET /payments/:id/check-status
+   * @param id รหัสรายการชำระเงิน
+   * @returns รายการชำระเงินที่อัปเดตสถานะแล้ว
+   */
+  @UseGuards(AuthGuard('jwt'))
+  @Get(':id/check-status')
+  async checkPaymentStatus(@Param('id') id: string) {
+    this.logger.log(`Checking payment status for payment ID: ${id}`);
+    return this.paymentsService.checkPromptPayStatus(id);
   }
 }
