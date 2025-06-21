@@ -164,9 +164,7 @@ export class PaymentsController {
    */
   @Post('webhook')
   async handleWebhook(@Body() body: any) {
-    this.logger.log(
-      `Received webhook from Omise: ${JSON.stringify(body).substring(0, 100)}...`,
-    );
+    console.log('FULL WEBHOOK DATA:', JSON.stringify(body, null, 2));
 
     // ตรวจสอบประเภทของเหตุการณ์
     if (body.data && body.data.object === 'charge' && body.data.id) {

@@ -95,7 +95,7 @@ export class OmiseService {
         description,
         metadata,
         return_uri:
-          'https://7107-110-168-240-236.ngrok-free.app/payments/webhook',
+          'https://2bcf-2001-fb1-121-5593-dc7c-51eb-be1f-1cd2.ngrok-free.app/payments/webhook',
       });
       this.logger.log(`Charge created successfully: ${charge.id}`);
       return charge;

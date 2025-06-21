@@ -6,6 +6,7 @@ import { UpdatePaymentDto } from './dto/update-payment.dto';
 import { Payment, PaymentDocument } from './schema/payments.schema';
 import { OmiseService } from './omise.service';
 import { PromptPayPaymentDto } from './dto/promptpay-payment.dto';
+import { OrdersGateway } from '../orders/orders.gateway';
 
 /**
  * บริการจัดการรายการชำระเงิน
@@ -17,6 +18,7 @@ export class PaymentsService {
   constructor(
     @InjectModel(Payment.name) private paymentModel: Model<PaymentDocument>,
     private readonly omiseService: OmiseService, // บริการสำหรับจัดการการชำระเงินผ่าน Omise
+    private readonly ordersGateway: OrdersGateway, // ใช้สำหรับส่งข้อมูลไปยัง WebSocket
   ) {}
 
   /**
@@ -274,6 +276,9 @@ export class PaymentsService {
         paymentStatus = 'pending';
     }
 
+    // บันทึกสถานะเดิมเพื่อตรวจสอบการเปลี่ยนแปลง
+    const oldStatus = payment.status;
+
     // อัปเดตสถานะการชำระเงิน
     payment.status = paymentStatus;
 
@@ -285,6 +290,11 @@ export class PaymentsService {
     this.logger.log(
       `Payment status updated to ${paymentStatus} for payment ID: ${payment.id}`,
     );
+
+    // ส่งการแจ้งเตือนผ่าน WebSocket ถ้าสถานะมีการเปลี่ยนแปลง
+    if (oldStatus !== paymentStatus) {
+      this.ordersGateway.notifyPaymentStatusChanged(updatedPayment);
+    }
 
     return updatedPayment;
   }
@@ -317,6 +327,7 @@ export class PaymentsService {
 
       // อัปเดตข้อมูลและสถานะการชำระเงิน
       payment.paymentDetails = charge;
+      const oldStatus = payment.status;
 
       if (charge.status === 'successful') {
         payment.status = 'paid';
@@ -326,7 +337,14 @@ export class PaymentsService {
         this.logger.log(`Payment ID ${paymentId} has failed or expired`);
       }
 
-      return await (payment as PaymentDocument).save();
+      const updatedPayment = await (payment as PaymentDocument).save();
+
+      // ส่งการแจ้งเตือนผ่าน WebSocket ถ้าสถานะมีการเปลี่ยนแปลง
+      if (oldStatus !== updatedPayment.status) {
+        this.ordersGateway.notifyPaymentStatusChanged(updatedPayment);
+      }
+
+      return updatedPayment;
     } catch (error) {
       this.logger.error(
         `Failed to check PromptPay status: ${error.message}`,
