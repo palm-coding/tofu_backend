@@ -72,14 +72,8 @@ export class SessionsController {
    * @returns ข้อมูลเซสชันที่ค้นพบ หรือ null ถ้าไม่พบ
    */
   @Get('qr/:qrCode')
-  async findByQrCode(
-    @Param('qrCode') qrCode: string,
-    @Query('includeInactive') includeInactive: boolean = false,
-  ) {
-    const session = await this.sessionsService.findByQrCode(
-      qrCode,
-      includeInactive,
-    );
+  async findByQrCode(@Param('qrCode') qrCode: string) {
+    const session = await this.sessionsService.findByQrCode(qrCode);
     if (!session) {
       throw new NotFoundException(`Session with QR Code ${qrCode} not found`);
     }

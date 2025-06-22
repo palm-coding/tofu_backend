@@ -67,6 +67,22 @@ export class OrdersGateway
     return { success: true };
   }
 
+  @SubscribeMessage('joinSessionRoom')
+  handleJoinSession(client: Socket, sessionId: string) {
+    const room = `session-${sessionId}`;
+    client.join(room);
+    this.logger.log(`Client ${client.id} joined session room: ${room}`);
+    return { success: true, room };
+  }
+
+  @SubscribeMessage('leaveSessionRoom')
+  handleLeaveSession(client: Socket, sessionId: string) {
+    const room = `session-${sessionId}`;
+    client.leave(room);
+    this.logger.log(`Client ${client.id} left session room: ${room}`);
+    return { success: true };
+  }
+
   notifyNewOrder(order: any) {
     this.logger.log(`Broadcasting new order: ${order._id}`);
     this.server.emit('newOrder', order);
@@ -103,6 +119,22 @@ export class OrdersGateway
           ? payment.orderId._id || payment.orderId.toString()
           : payment.orderId;
       this.server.to(`order-${orderId}`).emit('paymentStatusChanged', payment);
+    }
+  }
+
+  notifySessionCheckout(session: any) {
+    this.logger.log(`Broadcasting session checkout: ${session._id}`);
+
+    // ส่งการแจ้งเตือนไปยังทุกไคลเอนต์
+    this.server.to(`session-${session._id}`).emit('sessionCheckout', session);
+
+    // ส่งการแจ้งเตือนไปยังห้องของสาขา
+    if (session.branchId) {
+      const branchId =
+        typeof session.branchId === 'object'
+          ? session.branchId._id || session.branchId.toString()
+          : session.branchId;
+      this.server.to(`branch-${branchId}`).emit('sessionCheckout', session);
     }
   }
 }

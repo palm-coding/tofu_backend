@@ -5,6 +5,7 @@ import { CreateSessionDto } from './dto/create-session.dto';
 import { UpdateSessionDto } from './dto/update-session.dto';
 import { Session, SessionDocument } from './schema/sessions.schema';
 import * as crypto from 'crypto';
+import { OrdersGateway } from '../orders/orders.gateway';
 
 /**
  * บริการจัดการเซสชันลูกค้า
@@ -14,6 +15,7 @@ import * as crypto from 'crypto';
 export class SessionsService {
   constructor(
     @InjectModel(Session.name) private sessionModel: Model<SessionDocument>,
+    private readonly ordersGateway: OrdersGateway,
   ) {}
 
   /**
@@ -139,17 +141,14 @@ export class SessionsService {
    * @param includeInactive รวมเซสชันที่เช็คเอาท์แล้วด้วยหรือไม่
    * @returns ข้อมูลเซสชันที่ค้นพบ หรือ null ถ้าไม่พบ
    */
-  async findByQrCode(
-    qrCode: string,
-    includeInactive = false,
-  ): Promise<Session | null> {
+  async findByQrCode(qrCode: string): Promise<Session | null> {
     // สร้าง filter โดยกำหนด qrCode เสมอ
     const filter: any = { qrCode };
 
     // ถ้าไม่ต้องการรวมเซสชันที่เช็คเอาท์แล้ว ให้กรองออกไป
-    if (!includeInactive) {
-      filter.checkoutAt = null;
-    }
+    // if (!includeInactive) {
+    //   filter.checkoutAt = null;
+    // }
 
     return this.sessionModel
       .findOne(filter)
@@ -286,7 +285,22 @@ export class SessionsService {
    * @returns ข้อมูลเซสชันที่เช็คเอาท์แล้ว
    */
   async checkout(id: string): Promise<Session> {
-    const session = await this.sessionModel.findById(id).exec();
+    const session = await this.sessionModel
+      .findById(id)
+      .populate('branchId')
+      .populate('tableId')
+      .populate({
+        path: 'orderIds',
+        populate: [
+          {
+            path: 'orderLines',
+            populate: {
+              path: 'menuItemId',
+            },
+          },
+        ],
+      })
+      .exec();
 
     if (!session) {
       throw new NotFoundException(`Session with ID ${id} not found`);
@@ -297,7 +311,12 @@ export class SessionsService {
     }
 
     session.checkoutAt = new Date();
-    return session.save();
+    const updatedSession = await session.save();
+
+    // เพิ่มการแจ้งเตือนผ่าน WebSocket
+    this.ordersGateway.notifySessionCheckout(updatedSession);
+
+    return updatedSession;
   }
 
   /**
