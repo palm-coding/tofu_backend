@@ -3,6 +3,7 @@ import { MongooseModule } from '@nestjs/mongoose';
 import { MenuItemsService } from './menu-items.service';
 import { MenuItemsController } from './menu-items.controller';
 import { MenuItem, MenuItemSchema } from './schema/menu-items.schema';
+import { CloudinaryService } from './cloudinary.service';
 
 @Module({
   imports: [
@@ -14,7 +15,7 @@ import { MenuItem, MenuItemSchema } from './schema/menu-items.schema';
     ]),
   ],
   controllers: [MenuItemsController],
-  providers: [MenuItemsService],
+  providers: [MenuItemsService, CloudinaryService],
   exports: [MenuItemsService],
 })
 export class MenuItemsModule {}
