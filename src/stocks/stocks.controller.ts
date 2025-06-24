@@ -9,7 +9,6 @@ import {
   Query,
   HttpStatus,
   HttpCode,
-  BadRequestException,
 } from '@nestjs/common';
 import { StockService } from './stocks.service';
 import { CreateStockDto } from './dto/create-stock.dto';
@@ -74,7 +73,6 @@ export class StockController {
     };
   }
 
-  // ✅ Main adjust stock endpoint
   @Patch(':id/adjust')
   @HttpCode(HttpStatus.OK)
   async adjustStock(
@@ -89,88 +87,9 @@ export class StockController {
     };
   }
 
-  @Delete(':id')
-  @HttpCode(HttpStatus.OK)
-  async remove(@Param('id') id: string) {
-    const stock = await this.stockService.remove(id);
-    return {
-      success: true,
-      message: 'Stock deleted successfully',
-      data: stock,
-    };
-  }
-}
-
-// ✅ Branch-specific stock controller
-@Controller('branches/:branchId/stocks')
-export class BranchStockController {
-  constructor(private readonly stockService: StockService) {}
-
-  @Get()
-  async findByBranch(@Param('branchId') branchId: string) {
-    const stocks = await this.stockService.findByBranch(branchId);
-    return {
-      success: true,
-      message: 'Branch stocks retrieved successfully',
-      data: stocks,
-    };
-  }
-
-  @Post()
-  @HttpCode(HttpStatus.CREATED)
-  async createForBranch(
-    @Param('branchId') branchId: string,
-    @Body() createStockDto: Omit<CreateStockDto, 'branchId'>,
-  ) {
-    const stock = await this.stockService.create({
-      ...createStockDto,
-      branchId,
-    });
-    return {
-      success: true,
-      message: 'Stock created for branch successfully',
-      data: stock,
-    };
-  }
-
-  @Get('low-stock')
-  async findLowStockByBranch(@Param('branchId') branchId: string) {
-    const lowStockItems = await this.stockService.findLowStock(branchId);
-    return {
-      success: true,
-      message: 'Branch low stock items retrieved successfully',
-      data: lowStockItems,
-    };
-  }
-
-  @Patch(':stockId/adjust')
-  @HttpCode(HttpStatus.OK)
-  async adjustBranchStock(
-    @Param('branchId') branchId: string,
-    @Param('stockId') stockId: string,
-    @Body() adjustStockDto: AdjustStockDto,
-  ) {
-    // Optionally verify the stock belongs to the branch
-    const stock = await this.stockService.findOne(stockId);
-    if (stock.branchId.toString() !== branchId) {
-      throw new BadRequestException('Stock does not belong to this branch');
-    }
-
-    const adjustedStock = await this.stockService.adjustStock(
-      stockId,
-      adjustStockDto,
-    );
-    return {
-      success: true,
-      message: `Branch stock ${adjustStockDto.type === 'add' ? 'increased' : 'decreased'} successfully`,
-      data: adjustedStock,
-    };
-  }
-
   @Patch('bulk-adjust')
   @HttpCode(HttpStatus.OK)
-  async bulkAdjustBranchStocks(
-    @Param('branchId') branchId: string,
+  async bulkAdjustStocks(
     @Body()
     bulkAdjustDto: {
       adjustments: Array<{
@@ -187,6 +106,17 @@ export class BranchStockController {
       success: true,
       message: 'Bulk stock adjustment completed',
       data: results,
+    };
+  }
+
+  @Delete(':id')
+  @HttpCode(HttpStatus.OK)
+  async remove(@Param('id') id: string) {
+    const stock = await this.stockService.remove(id);
+    return {
+      success: true,
+      message: 'Stock deleted successfully',
+      data: stock,
     };
   }
 }
