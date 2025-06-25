@@ -14,6 +14,7 @@ import { OrdersModule } from './orders/orders.module';
 import { PaymentsModule } from './payments/payments.module';
 import { StocksModule } from './stocks/stocks.module';
 import { IngredientsModule } from './ingredients/ingredients.module';
+import { WaitlistModule } from './waitlist/waitlist.module';
 
 @Module({
   imports: [
@@ -38,6 +39,7 @@ import { IngredientsModule } from './ingredients/ingredients.module';
     PaymentsModule,
     StocksModule,
     IngredientsModule,
+    WaitlistModule,
   ],
   controllers: [AppController],
   providers: [AppService],
