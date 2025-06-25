@@ -5,16 +5,13 @@ import * as cookieParser from 'cookie-parser';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule, {
-    // เปิด log ทุก level เพื่อ debug
     logger: ['error', 'warn', 'log', 'debug', 'verbose'],
   });
 
-  // Force console logs ให้แสดงใน production
   console.log('='.repeat(60));
   console.log('🚀 TOFU BACKEND STARTING');
   console.log('='.repeat(60));
 
-  // Debug Environment Variables
   console.log('🔧 Environment Debug:');
   console.log('NODE_ENV:', process.env.NODE_ENV);
   console.log('JWT_SECRET exists:', !!process.env.JWT_SECRET);
@@ -30,7 +27,7 @@ async function bootstrap() {
     }),
   );
 
-  // CORS configuration แยกตาม environment
+  // Enhanced CORS configuration for production
   const corsOrigins =
     process.env.NODE_ENV === 'production'
       ? [
@@ -49,7 +46,7 @@ async function bootstrap() {
   app.enableCors({
     origin: corsOrigins,
     methods: ['GET', 'HEAD', 'PUT', 'PATCH', 'POST', 'DELETE', 'OPTIONS'],
-    credentials: true,
+    credentials: true, // This is crucial for cookies
     allowedHeaders: [
       'Origin',
       'X-Requested-With',
@@ -58,17 +55,17 @@ async function bootstrap() {
       'Authorization',
       'Cache-Control',
       'Set-Cookie',
+      'Cookie',
     ],
-    exposedHeaders: ['Set-Cookie'],
+    exposedHeaders: ['Set-Cookie', 'Authorization'],
     preflightContinue: false,
     optionsSuccessStatus: 204,
+    maxAge: 86400, // Cache preflight for 24 hours
   });
 
   app.use(cookieParser());
 
   const port = process.env.PORT || 3000;
-
-  // Bind to all interfaces for production
   await app.listen(port, '0.0.0.0');
 
   console.log('='.repeat(60));

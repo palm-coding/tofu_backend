@@ -18,44 +18,60 @@ export class AuthController {
   @UseGuards(LocalAuthGuard)
   @Post('login')
   async login(@Request() req, @Res({ passthrough: true }) res: Response) {
+    console.log('🔐 Login endpoint reached successfully');
+    console.log('🔐 User data:', req.user);
+
     const { access_token } = await this.authService.login(req.user);
-    res.cookie('access_token', access_token, {
+
+    // Production-ready cookie settings
+    const cookieOptions = {
       httpOnly: true,
-    });
+      secure: process.env.NODE_ENV === 'production', // HTTPS only in production
+      sameSite:
+        process.env.NODE_ENV === 'production'
+          ? ('none' as const)
+          : ('lax' as const), // Cross-site cookies for production
+      maxAge: 6 * 60 * 60 * 1000, // 6 hours
+      path: '/',
+    };
+
+    console.log('🍪 Setting cookie with options:', cookieOptions);
+
+    res.cookie('access_token', access_token, cookieOptions);
+
+    console.log('✅ Login successful, cookie set, returning response');
 
     return {
       message: 'Successfully logged in',
-      userId: req.user.userId || req.user.sub,
+      userId: req.user._id || req.user.sub,
+      user: {
+        id: req.user._id,
+        email: req.user.email,
+        role: req.user.role,
+        name: req.user.name,
+      },
     };
   }
 
   // Logout
   @Get('logout')
-  logout(@Res() res: Response, @Request() req) {
-    // ดึง userId จาก token ก่อนที่จะลบ cookie
-    const token = req.cookies['access_token'];
-    let userId = null;
+  logout(@Res() res: Response) {
+    console.log('🚪 Logout endpoint called');
 
-    if (token) {
-      try {
-        // ถอดรหัส token โดยไม่ต้องตรวจสอบ signature เพราะเราเพียงแค่ต้องการ userId
-        const base64Payload = token.split('.')[1];
-        const payload = JSON.parse(
-          Buffer.from(base64Payload, 'base64').toString(),
-        );
-        userId = payload.sub || payload.userId;
-      } catch (e) {
-        console.error('Error decoding token for logout:', e);
-      }
-    }
-
-    res.clearCookie('access_token', {
+    const cookieOptions = {
       httpOnly: true,
-    });
+      secure: process.env.NODE_ENV === 'production',
+      sameSite:
+        process.env.NODE_ENV === 'production'
+          ? ('none' as const)
+          : ('lax' as const),
+      path: '/',
+    };
+
+    res.clearCookie('access_token', cookieOptions);
 
     return res.json({
       message: 'Successfully logged out',
-      userId,
     });
   }
 }

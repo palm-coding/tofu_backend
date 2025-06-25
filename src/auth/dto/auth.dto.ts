@@ -24,6 +24,7 @@ export class JwtPayloadDto {
   readonly sub: string; // Mongo’s ObjectId as string
   readonly _id: string;
   readonly userId: string;
+  readonly role?: string; // Optional, for role-based access control
 }
 
 // What you get out of your GoogleStrategy
