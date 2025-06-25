@@ -5,24 +5,29 @@ import * as cookieParser from 'cookie-parser';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule, {
-    logger: ['error', 'warn', 'log', 'debug'],
+    logger:
+      process.env.NODE_ENV === 'production'
+        ? ['error', 'warn']
+        : ['error', 'warn', 'log', 'debug'],
   });
+
+  // Debug สำคัญ - ต้องมีเพื่อตรวจสอบว่า ENV ถูกโหลดหรือไม่
+  console.log('🔧 Production Environment Debug:');
+  console.log('NODE_ENV:', process.env.NODE_ENV);
+  console.log('JWT_SECRET exists:', !!process.env.JWT_SECRET);
+  console.log('MONGODB_URI exists:', !!process.env.MONGODB_URI);
+  console.log('FRONTEND_URL:', process.env.FRONTEND_URL);
 
   app.useGlobalPipes(
     new ValidationPipe({
       whitelist: true,
       forbidNonWhitelisted: true,
       transform: true,
+      disableErrorMessages: process.env.NODE_ENV === 'production',
     }),
   );
 
-  // Debug environment variables
-  console.log('🔧 Environment Debug:');
-  console.log('NODE_ENV:', process.env.NODE_ENV);
-  console.log('FRONTEND_URL:', process.env.FRONTEND_URL);
-  console.log('PORT:', process.env.PORT);
-
-  // แก้ไข CORS configuration - ทำให้ชัดเจนกว่าเดิม
+  // CORS configuration ที่ชัดเจน
   const corsOrigins =
     process.env.NODE_ENV === 'production'
       ? [
@@ -62,7 +67,6 @@ async function bootstrap() {
 
   console.log(`🚀 Application running on port ${port}`);
   console.log(`📦 Environment: ${process.env.NODE_ENV}`);
-  console.log(`🌐 Frontend URL: ${process.env.FRONTEND_URL}`);
 }
 
 bootstrap().catch((error) => {
