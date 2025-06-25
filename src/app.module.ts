@@ -20,6 +20,7 @@ import { WaitlistModule } from './waitlist/waitlist.module';
   imports: [
     ConfigModule.forRoot({
       isGlobal: true,
+      envFilePath: [`.env.${process.env.NODE_ENV}`, '.env'],
     }),
     MongooseModule.forRootAsync({
       imports: [ConfigModule],
