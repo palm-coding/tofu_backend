@@ -20,17 +20,28 @@ async function bootstrap() {
     }),
   );
 
-  // ปรับ CORS สำหรับ Production
+  // แก้ไข CORS configuration
   app.enableCors({
     origin:
       process.env.NODE_ENV === 'production'
         ? [
-            process.env.FRONTEND_URL || 'https://your-frontend-domain.com',
-            'https://tofu-frontend.onrender.com',
+            'https://tofu-frontend-one.vercel.app',
+            'https://tofu-backend.onrender.com',
           ]
         : ['http://localhost:3001', 'http://localhost:3000'],
-    methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',
+    methods: ['GET', 'HEAD', 'PUT', 'PATCH', 'POST', 'DELETE', 'OPTIONS'],
     credentials: true,
+    allowedHeaders: [
+      'Origin',
+      'X-Requested-With',
+      'Content-Type',
+      'Accept',
+      'Authorization',
+      'Cache-Control',
+    ],
+    exposedHeaders: ['Set-Cookie'],
+    preflightContinue: false,
+    optionsSuccessStatus: 204,
   });
 
   app.use(cookieParser());
@@ -40,6 +51,7 @@ async function bootstrap() {
 
   console.log(`🚀 Application running on port ${port}`);
   console.log(`📦 Environment: ${process.env.NODE_ENV}`);
+  console.log(`🌐 Frontend URL: ${process.env.FRONTEND_URL}`);
 }
 
 bootstrap().catch((error) => {
