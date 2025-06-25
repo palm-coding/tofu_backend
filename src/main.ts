@@ -5,10 +5,7 @@ import * as cookieParser from 'cookie-parser';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule, {
-    logger:
-      process.env.NODE_ENV === 'production'
-        ? ['error', 'warn']
-        : ['error', 'warn', 'log', 'debug'],
+    logger: ['error', 'warn', 'log', 'debug'],
   });
 
   app.useGlobalPipes(
@@ -16,19 +13,33 @@ async function bootstrap() {
       whitelist: true,
       forbidNonWhitelisted: true,
       transform: true,
-      disableErrorMessages: process.env.NODE_ENV === 'production',
     }),
   );
 
-  // แก้ไข CORS configuration
+  // Debug environment variables
+  console.log('🔧 Environment Debug:');
+  console.log('NODE_ENV:', process.env.NODE_ENV);
+  console.log('FRONTEND_URL:', process.env.FRONTEND_URL);
+  console.log('PORT:', process.env.PORT);
+
+  // แก้ไข CORS configuration - ทำให้ชัดเจนกว่าเดิม
+  const corsOrigins =
+    process.env.NODE_ENV === 'production'
+      ? [
+          'https://tofu-frontend-one.vercel.app',
+          'https://tofu-backend.onrender.com',
+        ]
+      : [
+          'http://localhost:3001',
+          'http://localhost:3000',
+          'http://127.0.0.1:3001',
+          'http://127.0.0.1:3000',
+        ];
+
+  console.log('🌐 CORS Origins:', corsOrigins);
+
   app.enableCors({
-    origin:
-      process.env.NODE_ENV === 'production'
-        ? [
-            'https://tofu-frontend-one.vercel.app',
-            'https://tofu-backend.onrender.com',
-          ]
-        : ['http://localhost:3001', 'http://localhost:3000'],
+    origin: corsOrigins,
     methods: ['GET', 'HEAD', 'PUT', 'PATCH', 'POST', 'DELETE', 'OPTIONS'],
     credentials: true,
     allowedHeaders: [

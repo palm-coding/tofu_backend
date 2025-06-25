@@ -24,8 +24,8 @@ import { WaitlistModule } from './waitlist/waitlist.module';
     }),
     MongooseModule.forRootAsync({
       imports: [ConfigModule],
-      useFactory: (configService: ConfigService) => ({
-        uri: configService.get<string>('MONGODB_URI'),
+      useFactory: () => ({
+        uri: process.env.MONGODB_URI,
       }),
       inject: [ConfigService],
     }),
