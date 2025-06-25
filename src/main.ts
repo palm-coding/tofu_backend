@@ -7,12 +7,12 @@ async function bootstrap() {
   const app = await NestFactory.create(AppModule, {
     logger:
       process.env.NODE_ENV === 'production'
-        ? ['error', 'warn']
+        ? ['error', 'warn', 'log']
         : ['error', 'warn', 'log', 'debug'],
   });
 
-  // Debug สำคัญ - ต้องมีเพื่อตรวจสอบว่า ENV ถูกโหลดหรือไม่
-  console.log('🔧 Production Environment Debug:');
+  // Debug Environment Variables
+  console.log('🔧 Environment Debug:');
   console.log('NODE_ENV:', process.env.NODE_ENV);
   console.log('JWT_SECRET exists:', !!process.env.JWT_SECRET);
   console.log('MONGODB_URI exists:', !!process.env.MONGODB_URI);
@@ -27,38 +27,51 @@ async function bootstrap() {
     }),
   );
 
-  // CORS configuration ที่ชัดเจน
-  const corsOrigins =
-    process.env.NODE_ENV === 'production'
-      ? [
-          'https://tofu-frontend-one.vercel.app',
-          'https://tofu-backend.onrender.com',
-        ]
-      : [
-          'http://localhost:3001',
-          'http://localhost:3000',
-          'http://127.0.0.1:3001',
-          'http://127.0.0.1:3000',
-        ];
-
-  console.log('🌐 CORS Origins:', corsOrigins);
-
-  app.enableCors({
-    origin: corsOrigins,
-    methods: ['GET', 'HEAD', 'PUT', 'PATCH', 'POST', 'DELETE', 'OPTIONS'],
-    credentials: true,
-    allowedHeaders: [
-      'Origin',
-      'X-Requested-With',
-      'Content-Type',
-      'Accept',
-      'Authorization',
-      'Cache-Control',
-    ],
-    exposedHeaders: ['Set-Cookie'],
-    preflightContinue: false,
-    optionsSuccessStatus: 204,
-  });
+  // CORS configuration - อนุญาตทุก origin ชั่วคราวเพื่อ debug
+  if (process.env.NODE_ENV === 'production') {
+    app.enableCors({
+      origin: [
+        'https://tofu-frontend-one.vercel.app',
+        'https://tofu-backend.onrender.com',
+      ],
+      methods: ['GET', 'HEAD', 'PUT', 'PATCH', 'POST', 'DELETE', 'OPTIONS'],
+      credentials: true,
+      allowedHeaders: [
+        'Origin',
+        'X-Requested-With',
+        'Content-Type',
+        'Accept',
+        'Authorization',
+        'Cache-Control',
+        'Set-Cookie',
+      ],
+      exposedHeaders: ['Set-Cookie'],
+      preflightContinue: false,
+      optionsSuccessStatus: 204,
+    });
+  } else {
+    app.enableCors({
+      origin: [
+        'http://localhost:3001',
+        'http://localhost:3000',
+        'http://127.0.0.1:3001',
+        'http://127.0.0.1:3000',
+      ],
+      methods: ['GET', 'HEAD', 'PUT', 'PATCH', 'POST', 'DELETE', 'OPTIONS'],
+      credentials: true,
+      allowedHeaders: [
+        'Origin',
+        'X-Requested-With',
+        'Content-Type',
+        'Accept',
+        'Authorization',
+        'Cache-Control',
+      ],
+      exposedHeaders: ['Set-Cookie'],
+      preflightContinue: false,
+      optionsSuccessStatus: 204,
+    });
+  }
 
   app.use(cookieParser());
 
@@ -67,6 +80,7 @@ async function bootstrap() {
 
   console.log(`🚀 Application running on port ${port}`);
   console.log(`📦 Environment: ${process.env.NODE_ENV}`);
+  console.log(`🌐 Frontend URL: ${process.env.FRONTEND_URL}`);
 }
 
 bootstrap().catch((error) => {

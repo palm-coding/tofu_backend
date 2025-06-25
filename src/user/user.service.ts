@@ -61,22 +61,29 @@ export class UserService {
    * @returns ข้อมูลผู้ใช้งานที่ค้นพบ
    * @throws NotFoundException หากไม่พบผู้ใช้งานที่มีอีเมลนี้
    */
-  async findByEmail(email: string): Promise<UserDocument> {
+  async findByEmail(email: string): Promise<UserDocument | null> {
     console.log('🔍 UserService.findByEmail called with:', email);
     console.log('📊 Database connection status:', this.userModel.db.readyState);
-    const user = await this.userModel.findOne({ email }).exec();
-    console.log('📋 Query result:', !!user);
-    if (user) {
-      console.log('👤 Found user details:');
-      console.log('  - ID:', user._id);
-      console.log('  - Email:', user.email);
-      console.log('  - Role:', user.role);
-      console.log('  - Has password:', !!user.password);
+
+    try {
+      const user = await this.userModel.findOne({ email }).exec();
+      console.log('📋 Query result:', !!user);
+
+      if (user) {
+        console.log('👤 Found user details:');
+        console.log('  - ID:', user._id);
+        console.log('  - Email:', user.email);
+        console.log('  - Role:', user.role);
+        console.log('  - Has password:', !!user.password);
+      } else {
+        console.log('❌ User not found with email:', email);
+      }
+
+      return user; // ไม่ throw error สำหรับ auth process
+    } catch (error) {
+      console.error('❌ Database query error:', error.message);
+      throw error;
     }
-    if (!user) {
-      throw new NotFoundException(`ไม่พบผู้ใช้งานที่มีอีเมล ${email}`);
-    }
-    return user;
   }
 
   /**
