@@ -63,6 +63,13 @@ export class UserService {
    */
   async findByEmail(email: string): Promise<UserDocument> {
     const user = await this.userModel.findOne({ email }).exec();
+    if (user) {
+      console.log('👤 Found user details:');
+      console.log('  - ID:', user._id);
+      console.log('  - Email:', user.email);
+      console.log('  - Role:', user.role);
+      console.log('  - Has password:', !!user.password);
+    }
     if (!user) {
       throw new NotFoundException(`ไม่พบผู้ใช้งานที่มีอีเมล ${email}`);
     }
