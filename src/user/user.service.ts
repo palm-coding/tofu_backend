@@ -62,7 +62,10 @@ export class UserService {
    * @throws NotFoundException หากไม่พบผู้ใช้งานที่มีอีเมลนี้
    */
   async findByEmail(email: string): Promise<UserDocument> {
+    console.log('🔍 UserService.findByEmail called with:', email);
+    console.log('📊 Database connection status:', this.userModel.db.readyState);
     const user = await this.userModel.findOne({ email }).exec();
+    console.log('📋 Query result:', !!user);
     if (user) {
       console.log('👤 Found user details:');
       console.log('  - ID:', user._id);
