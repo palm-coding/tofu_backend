@@ -93,6 +93,36 @@ export class OrdersGateway
     this.server.to(`branch-${branchId}`).emit('newOrder', order);
   }
 
+  notifyOrderStatusChanged(order: any) {
+    this.logger.log(
+      `Broadcasting order status changed: ${order._id}, status: ${order.status}`,
+    );
+
+    // ส่งการแจ้งเตือนไปยังทุกไคลเอนต์
+    this.server.emit('orderStatusChanged', order);
+
+    // ส่งการแจ้งเตือนไปยังห้องของสาขา
+    if (order.branchId) {
+      const branchId =
+        typeof order.branchId === 'object'
+          ? order.branchId._id || order.branchId.toString()
+          : order.branchId;
+      this.server.to(`branch-${branchId}`).emit('orderStatusChanged', order);
+    }
+
+    // ส่งการแจ้งเตือนไปยังห้องของเซสชัน
+    if (order.sessionId) {
+      const sessionId =
+        typeof order.sessionId === 'object'
+          ? order.sessionId._id || order.sessionId.toString()
+          : order.sessionId;
+      this.server.to(`session-${sessionId}`).emit('orderStatusChanged', order);
+    }
+
+    // ส่งการแจ้งเตือนไปยังห้องของออร์เดอร์
+    this.server.to(`order-${order._id}`).emit('orderStatusChanged', order);
+  }
+
   notifyPaymentStatusChanged(payment: any) {
     this.logger.log(
       `Broadcasting payment status changed: ${payment._id}, status: ${payment.status}`,

@@ -257,11 +257,21 @@ export class OrdersService {
   ): Promise<Order> {
     const order = await this.orderModel
       .findByIdAndUpdate(id, { status: updateStatusDto.status }, { new: true })
+      .populate('sessionId') // เพิ่มการ populate ข้อมูลสำคัญ
+      .populate('branchId')
+      .populate('tableId')
+      .populate({
+        path: 'orderLines.menuItemId',
+        model: 'MenuItem',
+      })
       .exec();
 
     if (!order) {
       throw new NotFoundException(`Order with ID ${id} not found`);
     }
+
+    // เพิ่มการแจ้งเตือนการเปลี่ยนสถานะผ่าน WebSocket
+    this.ordersGateway.notifyOrderStatusChanged(order);
 
     return order;
   }
