@@ -167,4 +167,22 @@ export class OrdersGateway
       this.server.to(`branch-${branchId}`).emit('sessionCheckout', session);
     }
   }
+
+  notifyTableStatusChanged(table: any) {
+    this.logger.log(
+      `Broadcasting table status changed: ${table._id}, status: ${table.status}`,
+    );
+
+    // ส่งการแจ้งเตือนไปยังทุกไคลเอนต์
+    this.server.emit('tableStatusChanged', table);
+
+    // ส่งการแจ้งเตือนไปยังห้องของสาขา
+    if (table.branchId) {
+      const branchId =
+        typeof table.branchId === 'object'
+          ? table.branchId._id || table.branchId.toString()
+          : table.branchId;
+      this.server.to(`branch-${branchId}`).emit('tableStatusChanged', table);
+    }
+  }
 }

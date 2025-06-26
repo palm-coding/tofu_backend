@@ -4,6 +4,7 @@ import { Model } from 'mongoose';
 import { CreateTableDto } from './dto/create-table.dto';
 import { UpdateTableDto } from './dto/update-table.dto';
 import { Table, TableDocument } from './schema/tables.schema';
+import { OrdersGateway } from 'src/orders/orders.gateway';
 
 /**
  * บริการจัดการข้อมูลโต๊ะในร้านอาหาร
@@ -13,6 +14,7 @@ import { Table, TableDocument } from './schema/tables.schema';
 export class TablesService {
   constructor(
     @InjectModel(Table.name) private tableModel: Model<TableDocument>,
+    private readonly ordersGateway: OrdersGateway,
   ) {}
 
   /**
@@ -66,11 +68,15 @@ export class TablesService {
   async update(id: string, updateTableDto: UpdateTableDto): Promise<Table> {
     const updatedTable = await this.tableModel
       .findByIdAndUpdate(id, updateTableDto, { new: true })
+      .populate('branchId') // เพิ่ม populate เพื่อให้ได้ข้อมูลสาขา
       .exec();
 
     if (!updatedTable) {
       throw new NotFoundException(`Table with ID ${id} not found`);
     }
+
+    // ส่งการแจ้งเตือนการเปลี่ยนแปลงสถานะโต๊ะ
+    this.ordersGateway.notifyTableStatusChanged(updatedTable);
 
     return updatedTable;
   }
