@@ -173,7 +173,7 @@ export class OrdersGateway
       `Broadcasting table status changed: ${table._id}, status: ${table.status}`,
     );
 
-    // ส่งการแจ้งเตือนไปยังทุกๆไคลเอนต์
+    // ส่งการแจ้งเตือนไปยังทุกๆไคลเอนต์ๆ
     this.server.emit('tableStatusChanged', table);
 
     // ส่งการแจ้งเตือนไปยังห้องของสาขา
